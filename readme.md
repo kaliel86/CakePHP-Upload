@@ -1,59 +1,126 @@
-# CakePHP Plugin Upload
+# CakePHP3 Behavior Upload
+CakePHP3 Behavior Upload is a migration for CakePHP3.
 
-[![Build Status](https://travis-ci.org/Grafikart/CakePHP-Upload.png?branch=master)](https://travis-ci.org/Grafikart/CakePHP-Upload)
-
-The main goal of this plugin is to give you the ability to manage file input easily (easy configuration). It was developed specifically for my needs so feel free to do some pull request if you want to add some features (without breaking the tests)
+For CakePHP 2.X [follow this link](https://github.com/Grafikart/CakePHP-Upload).
 
 ## Requirements
-
-* CakePHP 2.x
-* Keyboad + Mouse
-
-## Installation
-
-Load the plugin using bootstrap.php
-
-    CakePlugin::load('Upload');
+* CakePHP 3.0
+* Some cups of coffee
 
 ## Usage
+You have to load the behavior in your Table :
+``` php
+$this->addBehavior('Upload', [
+		'fields' => [
+			'avatar' => [
+				'path' => 'upload/avatar/:id/:md5'
+			]
+		]
+	]
+);
+```
 
-This plugin work as a behaviour for your model so you have to attach it to your model
+### Identifiers
+* **:id** Id of the Entity (It can be the user Id if you are using this for the users table for example)
+* **:md5** A random and unique identifier with 32 characters. i.e : *bbebb3c3c5e76a46c3dca92c9395ee65*
+* **:y** Based on the current year. i.e : *2014*
+* **:m** Based on the current month. i.e : *09*
 
-	public $actsAs = array(
-		'Upload.Upload' => array(
-			'fields' => array(
-				'thumb' => 'img/posts/:id1000/:id'
-			)
-		)
-	);
+To create an input to upload a file, just use the this rule : **fieldName_file**. Example :
+``` php
+<?= $this->Form->input('avatar_file', ['type' => 'file']) ?>
+```
 
-The fields key is used to define the fields in your table that will be used to save the image path
-The value is the path of the uploaded file (within the webroot directory)
+## Configuration
+* ### suffix
+    Default : `_file`
 
-* **:id**, record ID
-* **:id1000**, ceil( recordID / 1000) * to avoid a single direcoty with thousands of images
-* **:id100**
-* **:uid** User id (retrieved using CakeSession::read('Auth.User.id'))
-* **:y**, year (2013)
-* **:m**, month (03)
+    You can chage the suffix *_file* to your own suffix :
+    ``` php
+    $this->addBehavior('Upload', [
+    		'fields' => [
+    			'avatar' => [
+    				'path' => 'upload/avatar/:id/:md5'
+    			]
+    		],
+    		'suffix' => '_anotherName'
+    	]
+    );
 
-If you want to create an input to upload a new file you have to name this field ***_file. For the example above :
+    <?= $this->Form->input('avatar_anotherName', ['type' => 'file']) ?>
+    ```
 
-	$this->Form->input('thumb_file', array('type' => 'file'));
+* ### overwrite
+    Default : `true`
 
-If you save data with this "***_file" field it would automaticaly move the uploaded file to the right directory keeping the extension (using lowercase) and saving the field in your table.
+    This option allow you to define if the behavior must delete and/or overwrite the old file for the field. **If the option is *false*, the file will be not uploaded if the old file name has the same name as the new name file.** It can be useful if you want your users to upload only one image.
+    ``` php
+    $this->addBehavior('Upload', [
+    		'fields' => [
+    			'avatar' => [
+    				'path' => 'upload/avatar/:id/:md5',
+                    'overwrite' => false
+    			]
+    		]
+    	]
+    );
+    ```
 
-## Validation rules
+* ### defaultFile
+    Default : `false`
 
-By default no validation rules are attached to the file upload. **You have to explicity attach a rule to your field or your user could upload any kind of file !**
+    This option allow you to defined a default file for the field. It can be useful if you have defined a default avatar for all your new user and you don't want to delete it (i.e : In your database as defaut value for avatar you have set : "../img/default_avatar.png"). **Will work only if the overwrite is defined to *true***.
+    ``` php
+    $this->addBehavior('Upload', [
+    		'fields' => [
+    			'avatar' => [
+    				'path' => 'upload/avatar/:id/:md5',
+                    'overwrite' => true,
+                    'defaultFile' => 'default_avatar.png'
+    			]
+    		]
+    	]
+    );
+    ```
 
-### fileExtension(Array $authorizedExtensions, $allowEmpty = true)
+* ### prefix
+    Default : `false`
 
-Check that the file match an array of extensions (lowercase only)
+    This option allow you to defined a prefix for your upload path. Useful if you don't want to use the img/ directory for your upload.
+    ``` php
+    $this->addBehavior('Upload', [
+    		'fields' => [
+    			'avatar' => [
+    				'path' => 'upload/avatar/:id/:md5',
+    				'prefix' => '../'
+    			]
+    		]
+    	]
+    );
+    ```
+    ##### Example :
+    If you use a custom directory at the root of the webroot directory and you use the Html Helper to display your image, you can set a prefix like this :
+    ``` php
+    /**
+     * The path look like this :
+     *       webroot/upload/avatar
+     *
+     * In the database, the record will look like that :
+     *      ../upload/avatar/1/bbebb3c3c5e76a46c3dca92c9395ee65.png
+     */
 
-	public $validate = array(
-		'thumb_file' => array(
-			'rule' => array('fileExtension', array('jpg','png'))
-		)
-	);
+    $this->addBehavior('Upload', [
+    		'fields' => [
+    			'avatar' => [
+    				'path' => 'upload/avatar/:id/:md5',
+    				'prefix' => '../'
+    			]
+    		]
+    	]
+    );
 
+    // In a view, with the Html Helper:
+    <?= $this->Html->image($User->avatar) ?>
+    // Output : <img src="/img/../upload/avatar/1/bbebb3c3c5e76a46c3dca92c9395ee65.png" alt="">
+
+    ```
