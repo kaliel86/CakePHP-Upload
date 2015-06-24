@@ -20,6 +20,13 @@ $this->addBehavior('Upload', [
 );
 ```
 
+Remember to make the virtual field accessible in your entities
+```
+protected $_accessible = [
+	'avatar_file' => true
+];
+```
+
 ### Identifiers
 * **:id** Id of the Entity (It can be the user Id if you are using this for the users table for example)
 * **:md5** A random and unique identifier with 32 characters. i.e : *bbebb3c3c5e76a46c3dca92c9395ee65*
